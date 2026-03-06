@@ -7,30 +7,9 @@
 
 package frc.robot;
 
-import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
-import com.ctre.phoenix.motorcontrol.can.TalonSRX;
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.DutyCycleOut;
-import com.ctre.phoenix6.controls.Follower;
-import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.signals.MotorAlignmentValue;
-import com.revrobotics.PersistMode;
-import com.revrobotics.ResetMode;
-import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.SparkMax;
-import com.revrobotics.spark.config.SparkBaseConfig;
-import com.revrobotics.spark.config.SparkMaxConfig;
-
-import edu.wpi.first.wpilibj.AnalogInput;
-import edu.wpi.first.wpilibj.Compressor;
-import edu.wpi.first.wpilibj.DoubleSolenoid;
-import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
-import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -39,97 +18,19 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * project.
  */
 public class Robot extends TimedRobot {
-  // M13 Wiring Spreadsheet: https://docs.google.com/spreadsheets/d/1hk4W3EPgBoEb33NhUvyOhPA2kJbpwb9V6ol7X2jnmQQ/edit#gid=0
-  
-  // drivetrain
-  TalonFX right_drive_master = new TalonFX(4);
-  TalonFX right_drive_follower = new TalonFX(5);
+  private Command m_autonomousCommand;
+  private RobotContainer m_robotContainer;
 
-  TalonFX left_drive_master = new TalonFX(6);
-  TalonFX left_drive_follower = new TalonFX(7);
-
-  private final DutyCycleOut leftOut = new DutyCycleOut(0);
-  private final DutyCycleOut rightOut = new DutyCycleOut(0);
-
-    private final XboxController joystick = new XboxController(0);
-
-
-
-
-  //intake
-  TalonSRX intake = new TalonSRX(11);
-  DoubleSolenoid intake_solenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 0, 1);
-
-  Compressor compressor = new Compressor(PneumaticsModuleType.CTREPCM);
-
-  //magazine
-  TalonSRX magazine = new TalonSRX(10);
-  AnalogInput magIR_bottom = new AnalogInput(1);
-
-  //flywheel
-  SparkMax flywheel_main = new SparkMax(1, MotorType.kBrushless); // right side motor
-  SparkMax flywheel_follower = new SparkMax(2, MotorType.kBrushless); // left side motor
-
-  XboxController controller = new XboxController(0);
-
-  Timer shooting_delay_timer = new Timer();
-  boolean timer_reset_trigger = false;
-  
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
    */
   @Override
   public void robotInit() {
-    // configure to factory defaults
-      // TalonFXs
-
-      var leftConfiguration = new TalonFXConfiguration();
-      var rightConfiguration = new TalonFXConfiguration();
-
-      leftConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
-      rightConfiguration.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-
-
-      right_drive_master.getConfigurator().apply(rightConfiguration);
-      right_drive_follower.getConfigurator().apply(rightConfiguration);
-      left_drive_master.getConfigurator().apply(leftConfiguration);
-      left_drive_follower.getConfigurator().apply(leftConfiguration);
-      
-      // TalonSRX
-      magazine.configFactoryDefault();
-      intake.configFactoryDefault();
-
-      // Spark MAXs
-      SparkBaseConfig config = new SparkMaxConfig();
-      SparkBaseConfig followConfig = new SparkMaxConfig()
-      .follow(1)
-      .inverted(true);
-
-      flywheel_main.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
-      flywheel_follower.configure(followConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
-
-
-    // drivetrain
-      // create master-follower relationships
-    left_drive_follower.setControl(new Follower(left_drive_master.getDeviceID(), MotorAlignmentValue.Aligned));
-    right_drive_follower.setControl(new Follower(right_drive_master.getDeviceID(), MotorAlignmentValue.Aligned));
-
-    left_drive_master.setSafetyEnabled(true);
-    right_drive_master.setSafetyEnabled(true);
-      // invert right side
-
-    // intake
-      intake_solenoid.set(Value.kReverse); // must set initial state for toggle()
-      intake.setInverted(false);
-    
-    // magazine
-      magazine.setInverted(false);
-
-    // flywheel
-     // flywheel_follower.follow(flywheel_main, true);
-
-    shooting_delay_timer.start();
+    // Instantiate our RobotContainer. This will perform all our button bindings,
+    // and put our
+    // autonomous chooser on the dashboard.
+    m_robotContainer = new RobotContainer();
   }
 
   /**
@@ -141,99 +42,59 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
-    // System.out.println(magIR_bottom.getAverageValue());
-    SmartDashboard.putNumber("mag", magIR_bottom.getAverageValue());
-    SmartDashboard.putNumber("magMotorOutput", magazine.getMotorOutputPercent());
-    SmartDashboard.putBoolean("compressorOn?", compressor.getPressureSwitchValue());
+    // Runs the Scheduler. This is responsible for polling buttons, adding newly-scheduled
+    // commands, running already-scheduled commands, removing finished or interrupted commands,
+    // and running subsystem periodic() methods. This must be called from the robot's periodic
+    // block in order for anything in the Command-based framework to work.
+    CommandScheduler.getInstance().run();
   }
 
   /**
-   * This autonomous (along with the chooser code above) shows how to select between different
-   * autonomous modes using the dashboard. The sendable chooser code works with the Java
-   * SmartDashboard. If you prefer the LabVIEW Dashboard, remove all of the chooser code and
-   * uncomment the getString line to get the auto name from the text box below the Gyro
-   *
-   * <p>You can add additional auto modes by adding additional comparisons to the switch structure
-   * below with additional strings. If using the SendableChooser make sure to add them to the
-   * chooser code above as well.
+   * This function is called once each time the robot enters Disabled mode.
    */
   @Override
-  public void autonomousInit() {}
+  public void disabledInit() {}
+
+  @Override
+  public void disabledPeriodic() {}
+
+  /**
+   * This autonomous runs the autonomous command selected by your {@link RobotContainer} class.
+   */
+  @Override
+  public void autonomousInit() {
+    m_autonomousCommand = m_robotContainer.getAutonomousCommand();
+   
+    // schedule the autonomous command (example)
+    if (m_autonomousCommand != null) {
+      m_autonomousCommand.schedule();
+    }
+  }
 
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {}
 
-  /** This function is called once when teleop is enabled. */
   @Override
   public void teleopInit() {
-    timer_reset_trigger = false;
+    // This makes sure that the autonomous stops running when
+    // teleop starts running. If you want the autonomous to
+    // continue until interrupted by another command, remove
+    // this line or comment it out.
+    if (m_autonomousCommand != null) {
+      m_autonomousCommand.cancel();
+    }
   }
 
   /** This function is called periodically during operator control. */
   @Override
-  public void teleopPeriodic() {
-    // arcade drive, maximum speed of around 0.71 (square root of 0.5)
-        /* Get forward and rotational throttle from joystick */
-    /* invert the joystick Y because forward Y is negative */
-    double fwd = deadband(-joystick.getLeftY(), 0.1);
-    double rot = deadband(joystick.getRightX(), 0.1);
-    /* Set output to control frames */
-    leftOut.Output = fwd + rot;
-    rightOut.Output = fwd - rot;
-    /* And set them to the motors */
-    if (!joystick.getAButton()) {
-      left_drive_master.setControl(leftOut);
-      right_drive_master.setControl(rightOut);
-    }
-    // toggle intake
-    if(controller.getAButtonPressed()){
-      intake_solenoid.toggle();
-    }
+  public void teleopPeriodic() {}
 
-    // intaking balls
-    if(controller.getLeftTriggerAxis() > 0.5 && intake_solenoid.get() == Value.kForward){
-      intake.set(TalonSRXControlMode.PercentOutput, 0.5);
-      magazine.set(TalonSRXControlMode.PercentOutput, 0.4);
-    } 
-    
-    else if (controller.getRightTriggerAxis() > 0.5) {
-      // restart timer logic
-      if(!timer_reset_trigger){
-        shooting_delay_timer.restart();
-        timer_reset_trigger = true;
-      }
-      
-      flywheel_main.set(0.7);
-
-      // delays magazine starting by 0.5 seconds to allow flywheel to spin up
-      if(shooting_delay_timer.get() < 1.0){
-        magazine.set(TalonSRXControlMode.PercentOutput, 0);
-      } else {
-        magazine.set(TalonSRXControlMode.PercentOutput, 0.8);
-      }
-
-    
-
-    } else {
-      timer_reset_trigger = false;
-      flywheel_main.set(0);
-      magazine.set(TalonSRXControlMode.PercentOutput, 0);
-      intake.set(TalonSRXControlMode.PercentOutput, 0);
-    }
+  @Override
+  public void testInit() {
+    // Cancels all running commands at the start of test mode.
+    CommandScheduler.getInstance().cancelAll();
   }
-
-  /** This function is called once when the robot is disabled. */
-  @Override
-  public void disabledInit() {}
-
-  /** This function is called periodically when disabled. */
-  @Override
-  public void disabledPeriodic() {}
-
-  /** This function is called once when test mode is enabled. */
-  @Override
-  public void testInit() {}
 
   /** This function is called periodically during test mode. */
   @Override
@@ -246,17 +107,4 @@ public class Robot extends TimedRobot {
   /** This function is called periodically whilst in simulation. */
   @Override
   public void simulationPeriodic() {}
-
-    private static double deadband(double value, double deadband) {
-    if (Math.abs(value) > deadband) {
-      if (value > 0.0) {
-        return (value - deadband) / (1.0 - deadband);
-      } else {
-        return (value + deadband) / (1.0 - deadband);
-
-      }
-    } else {
-      return 0.0;
-    }
-  }
 }
