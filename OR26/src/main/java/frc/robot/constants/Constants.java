@@ -60,7 +60,9 @@ public final class Constants {
     /** CAN ID for the follower flywheel motor (SparkMax). */
     public static final int kFlywheelFollowerPort = 2;
     /** The target speed for the flywheel when shooting (0.0 to 1.0). */
-    public static final double kFlywheelShootSpeed = 0.8;
+    public static final double kFlywheelShootSpeed = 0.4;
+    /** The available target speeds for the flywheel. */
+    public static final double[] kFlywheelSpeeds = {0.4, 0.6, 0.8};
   }
 
   /** Constants for shooter logic and timing. */

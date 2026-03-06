@@ -76,6 +76,9 @@ public class RobotContainer {
                     Commands.sequence(
                         Commands.waitSeconds(ShooterConstants.kFlywheelSpinUpDelay),
                         m_magazine.runCommand(MagazineConstants.kMagazineShootSpeed))));
+
+    // X Button: Cycle shooter speed
+    controller.x().onTrue(m_flywheel.changeSpeedCommand());
   }
 
   /**
