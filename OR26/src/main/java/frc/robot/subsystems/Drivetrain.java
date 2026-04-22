@@ -51,8 +51,8 @@ public class Drivetrain extends SubsystemBase {
    * @param rot the commanded rotation
    */
   public void arcadeDrive(double fwd, double rot) {
-    m_leftOut.Output = fwd + rot;
-    m_rightOut.Output = fwd - rot;
+    m_leftOut.Output = (fwd + rot) * 0.15;
+    m_rightOut.Output = (fwd - rot) * 0.15;
     m_leftMaster.setControl(m_leftOut);
     m_rightMaster.setControl(m_rightOut);
   }

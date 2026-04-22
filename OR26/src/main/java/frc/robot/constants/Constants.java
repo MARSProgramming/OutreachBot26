@@ -14,7 +14,7 @@ public final class Constants {
      * The deadband threshold (0.0 to 1.0). Inputs smaller than this are ignored to prevent
      * unintended movement caused by joystick drift.
      */
-    public static final double kDriveDeadband = 0.1;
+    public static final double kDriveDeadband = 0.15;
   }
 
   /** Constants for the Drivetrain subsystem (motors and IDs). */
@@ -60,14 +60,14 @@ public final class Constants {
     /** CAN ID for the follower flywheel motor (SparkMax). */
     public static final int kFlywheelFollowerPort = 2;
     /** The target speed for the flywheel when shooting (0.0 to 1.0). */
-    public static final double kFlywheelShootSpeed = 0.4;
+    public static final double kFlywheelShootSpeed = 0.6;
     /** The available target speeds for the flywheel. */
-    public static final double[] kFlywheelSpeeds = {0.4, 0.6, 0.8};
+    public static final double[] kFlywheelSpeeds = {0.6, 0.8, 1.0};
   }
 
   /** Constants for shooter logic and timing. */
   public static final class ShooterConstants {
     /** Time in seconds to wait for the flywheel to spin up before feeding a ball. */
-    public static final double kFlywheelSpinUpDelay = 0.75; // seconds
+    public static final double kFlywheelSpinUpDelay = 0.3; // seconds
   }
 }
