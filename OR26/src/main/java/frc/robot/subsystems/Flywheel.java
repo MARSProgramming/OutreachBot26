@@ -27,6 +27,7 @@ public class Flywheel extends SubsystemBase {
     // Create configuration objects for the SparkMax motors
     SparkMaxConfig mainConfig = new SparkMaxConfig();
     mainConfig.idleMode(IdleMode.kCoast);
+    mainConfig.inverted(true);
 
     SparkMaxConfig followerConfig = new SparkMaxConfig();
     followerConfig.idleMode(IdleMode.kCoast);
